@@ -92,3 +92,36 @@ class CuboClient:
                 "success": False,
                 "message": response.get("message", "Error desconocido")
             }
+
+    def subscription(self, data):
+        url = f'{self.url}/api/v1/transactions/subscription'
+        # Asegurarse que data sea un diccionario
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError:
+                return {"error": "Los datos proporcionados no son un JSON válido"}
+        
+        # Convertir amount a centavos si es necesario
+        if 'amount' in data and isinstance(data['amount'], float):
+            data['amount'] = self.convert_centv(data['amount'])
+
+        try:
+            # Imprimir información de depuración
+            print(f"URL: {url}")
+            print(f"Headers: {self.headers}")
+            print(f"Datos: {json.dumps(data, indent=2)}")
+            
+            # Realizar la solicitud
+            response = requests.post(url=url, headers=self.headers, json=data)
+
+            if response.content:
+                try:
+                    return response.json()
+                except json.JSONDecodeError:
+                    return {"error": f"La respuesta no es un JSON válido: {response.text[:100]}..."}
+            else:
+                return {"error": "Respuesta vacía del servidor"}
+        
+        except requests.RequestException as e:
+            return {"error": f"Error de conexión: {str(e)}"}
